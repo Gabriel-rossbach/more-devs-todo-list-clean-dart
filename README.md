@@ -2,7 +2,7 @@
 
 Gabarito da aula de arquitetura em camadas. É o `todo_base` refatorado para as quatro camadas do Clean Dart, com:
 
-- leitura de tarefas pela API do JSONPlaceholder;
+  - leitura de tarefas pela API publicada no Railway;
 - **testes** de caso de uso, repositório, controller e página, todos sem internet.
 
 ## Como rodar
@@ -11,7 +11,7 @@ Gabarito da aula de arquitetura em camadas. É o `todo_base` refatorado para as 
 flutter create . --project-name todo_gabarito
 flutter pub get
 flutter test                              # roda todos os testes
-flutter run                               # usa a API do JSONPlaceholder via Dio
+  flutter run                               # usa a API do Railway via Dio
 ```
 
 O `flutter create` só gera as pastas de plataforma; não sobrescreve `lib/` nem `test/`.
@@ -47,4 +47,4 @@ test/
 
 ## Fonte dos dados
 
-As tarefas são carregadas do endpoint `/todos` do JSONPlaceholder. A aplicação é somente leitura: o status exibido vem da API e não há operação de atualização local ou remota.
+As tarefas são carregadas do endpoint `/todos` da API publicada no Railway. A documentação Swagger está disponível em `https://todo-api-production-62d2.up.railway.app/docs` e o contrato OpenAPI em `/openapi.json`.

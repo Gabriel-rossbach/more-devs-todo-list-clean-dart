@@ -11,7 +11,8 @@ import 'modules/todos/presenter/todos_page.dart';
 /// Único lugar que sabe quais implementações usar.
 void main() {
   final TodoDatasource datasource = TodoApiDatasource(
-    Dio(BaseOptions(baseUrl: 'https://jsonplaceholder.typicode.com')),
+    Dio(BaseOptions(
+        baseUrl: 'https://todo-api-production-62d2.up.railway.app')),
   );
   final repository = TodoRepositoryImpl(datasource);
   final controller = TodosController(
