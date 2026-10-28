@@ -193,6 +193,51 @@ let habits = [
     { id: 5, name: 'Meditar', checkins: seedCheckins(3, 4) },
 ];
 
+const moreHabitNames = [
+    'Fazer 30 flexões', 'Dormir antes das 23h', 'Acordar às 6h', 'Arrumar a cama',
+    'Tomar café da manhã', 'Comer uma fruta', 'Comer salada no almoço', 'Evitar refrigerante',
+    'Evitar doces', 'Tomar vitaminas', 'Alongar 10 minutos', 'Correr 5 km',
+    'Pedalar 30 minutos', 'Fazer yoga', 'Ir à academia', 'Subir de escada',
+    'Dar 10 mil passos', 'Fazer prancha por 1 minuto', 'Praticar respiração', 'Escrever no diário',
+    'Anotar 3 gratidões', 'Planejar o dia', 'Revisar a semana', 'Organizar a mesa',
+    'Zerar a caixa de entrada', 'Lavar a louça', 'Regar as plantas', 'Passear com o cachorro',
+    'Ligar para a família', 'Mandar mensagem para um amigo', 'Elogiar alguém', 'Estudar inglês',
+    'Praticar espanhol', 'Fazer uma lição no Duolingo', 'Ler um artigo técnico', 'Resolver um exercício de lógica',
+    'Fazer um commit', 'Revisar anotações da aula', 'Assistir a uma aula online', 'Ouvir um podcast',
+    'Ler notícias', 'Praticar violão', 'Desenhar 15 minutos', 'Tirar uma foto',
+    'Escrever um poema', 'Cozinhar em casa', 'Levar marmita', 'Economizar R$ 10',
+    'Anotar os gastos', 'Não comprar por impulso', 'Ficar 1 hora sem celular', 'Sem redes sociais antes das 10h',
+    'Desligar telas às 22h', 'Tomar sol por 15 minutos', 'Passar protetor solar', 'Usar fio dental',
+    'Fazer skincare à noite', 'Beber chá', 'Reduzir o café', 'Fazer um lanche saudável',
+    'Pausar a cada hora', 'Corrigir a postura', 'Fazer 20 agachamentos', 'Pular corda',
+    'Nadar', 'Jogar xadrez', 'Fazer palavras cruzadas', 'Aprender uma palavra nova',
+    'Ler um conto', 'Estudar Dart', 'Praticar digitação', 'Separar o lixo reciclável',
+    'Usar garrafa reutilizável', 'Ir a pé ao trabalho', 'Ajudar alguém', 'Visualizar as metas',
+    'Arrumar a mochila', 'Separar a roupa de amanhã', 'Ficar 5 minutos em silêncio', 'Agradecer alguém',
+];
+
+// Gerador aleatório com semente: os check-ins variam entre os hábitos,
+// mas são sempre os mesmos a cada vez que a API sobe.
+const seededRandom = (seed) => () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+
+const randomDays = (seed) => {
+    const random = seededRandom(seed);
+    const frequency = random();
+    return Array.from({ length: 21 }, (_, day) => day).filter(() => random() < frequency);
+};
+
+habits.push(
+    ...moreHabitNames.map((name, index) => {
+        const id = habits.length + index + 1;
+        return { id, name, checkins: seedCheckins(...randomDays(id)) };
+    }),
+);
+
 app.get('/', (_request, response) => {
     response.json({ name: 'todo-gabarito-api', status: 'ok' });
 });
