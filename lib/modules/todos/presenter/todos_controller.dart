@@ -1,13 +1,15 @@
 import 'package:flutter/foundation.dart';
+import 'package:todo_gabarito/modules/todos/domain/usecases/update_todos_use_case.dart';
 
 import '../domain/entities/todo.dart';
 import '../domain/errors/todo_failure.dart';
 import '../domain/usecases/get_todos.dart';
 
 class TodosController extends ChangeNotifier {
-  TodosController({required this.getTodos});
+  TodosController({required this.getTodos, required this.updateUseCase});
 
-  final GetTodos getTodos;
+  final GetTodosUseCase getTodos;
+  final UpdateTodoUseCase updateUseCase;
 
   List<Todo> todos = [];
   bool loading = false;

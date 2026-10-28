@@ -13,7 +13,7 @@ const openapiDocument = {
     info: {
         title: 'Todo Gabarito API',
         version: '1.0.0',
-        description: 'API para listar e atualizar tarefas.',
+        description: 'API para listar e atualizar tarefas e hábitos.',
     },
     servers: [{ url: '/' }],
     paths: {
@@ -85,6 +85,48 @@ const openapiDocument = {
                 },
             },
         },
+        '/habits': {
+            get: {
+                summary: 'Lista os hábitos com o histórico de check-ins',
+                responses: {
+                    200: {
+                        description: 'Lista de hábitos',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'array',
+                                    items: { $ref: '#/components/schemas/Habit' },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        '/habits/{id}/checkins': {
+            post: {
+                summary: 'Registra o check-in de hoje (fuso de Brasília)',
+                parameters: [{
+                    name: 'id',
+                    in: 'path',
+                    required: true,
+                    schema: { type: 'integer', example: 1 },
+                }],
+                responses: {
+                    201: {
+                        description: 'Check-in registrado',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/Habit' },
+                            },
+                        },
+                    },
+                    400: { description: 'Dados inválidos' },
+                    404: { description: 'Hábito não encontrado' },
+                    409: { description: 'Check-in de hoje já registrado' },
+                },
+            },
+        },
     },
     components: {
         schemas: {
@@ -95,6 +137,19 @@ const openapiDocument = {
                     id: { type: 'integer', example: 1 },
                     title: { type: 'string', example: 'Estudar Clean Dart' },
                     completed: { type: 'boolean', example: false },
+                },
+            },
+            Habit: {
+                type: 'object',
+                required: ['id', 'name', 'checkins'],
+                properties: {
+                    id: { type: 'integer', example: 1 },
+                    name: { type: 'string', example: 'Beber 2L de água' },
+                    checkins: {
+                        type: 'array',
+                        description: 'Datas (AAAA-MM-DD) em ordem crescente',
+                        items: { type: 'string', format: 'date', example: '2026-10-27' },
+                    },
                 },
             },
             Status: {
@@ -116,6 +171,26 @@ let todos = [
     { id: 2, title: 'Fazer o exercício da aula', completed: false },
     { id: 3, title: 'Rever o diagrama de camadas', completed: true },
     { id: 4, title: 'Publicar a API no Railway', completed: false },
+];
+
+// Data de hoje (AAAA-MM-DD) no fuso de Brasília, para bater com o app.
+const today = () =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+
+const daysAgo = (days) => {
+    const date = new Date(`${today()}T00:00:00Z`);
+    date.setUTCDate(date.getUTCDate() - days);
+    return date.toISOString().slice(0, 10);
+};
+
+const seedCheckins = (...days) => days.sort((a, b) => b - a).map(daysAgo);
+
+let habits = [
+    { id: 1, name: 'Beber 2L de água', checkins: seedCheckins(1, 2, 3, 4, 5) },
+    { id: 2, name: 'Ler 10 páginas', checkins: seedCheckins(0, 1, 2) },
+    { id: 3, name: 'Estudar Flutter', checkins: seedCheckins(1, 2, 4, 5, 6) },
+    { id: 4, name: 'Caminhar 20 minutos', checkins: [] },
+    { id: 5, name: 'Meditar', checkins: seedCheckins(3, 4) },
 ];
 
 app.get('/', (_request, response) => {
@@ -147,6 +222,31 @@ app.patch('/todos/:id', (request, response) => {
 
     todo.completed = completed;
     return response.json(todo);
+});
+
+app.get('/habits', (_request, response) => {
+    response.json(habits);
+});
+
+app.post('/habits/:id/checkins', (request, response) => {
+    const id = Number(request.params.id);
+
+    if (!Number.isInteger(id)) {
+        return response.status(400).json({ error: 'O id deve ser um número inteiro.' });
+    }
+
+    const habit = habits.find((item) => item.id === id);
+    if (!habit) {
+        return response.status(404).json({ error: 'Hábito não encontrado.' });
+    }
+
+    const date = today();
+    if (habit.checkins.includes(date)) {
+        return response.status(409).json({ error: 'Check-in de hoje já registrado.' });
+    }
+
+    habit.checkins.push(date);
+    return response.status(201).json(habit);
 });
 
 app.use((_request, response) => {

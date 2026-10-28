@@ -4,6 +4,7 @@ import '../../domain/repositories/todo_repository.dart';
 import '../datasources/todo_datasource.dart';
 import '../models/todo_model.dart';
 
+//chamar o datasource e desserealizar a resposta
 class TodoRepositoryImpl implements TodoRepository {
   final TodoDatasource datasource;
   TodoRepositoryImpl(this.datasource);

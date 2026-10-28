@@ -12,4 +12,9 @@ class TodoApiDatasource implements TodoDatasource {
     final res = await dio.get<List<dynamic>>('/todos');
     return res.data!.cast<Map<String, dynamic>>();
   }
+
+  Future<List<Map<String, dynamic>>> update() async {
+    final res = await dio.get<List<dynamic>>('/todos');
+    return res.data!.cast<Map<String, dynamic>>();
+  }
 }
