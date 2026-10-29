@@ -13,8 +13,11 @@ class TodoApiDatasource implements TodoDatasource {
     return res.data!.cast<Map<String, dynamic>>();
   }
 
-  Future<List<Map<String, dynamic>>> update() async {
-    final res = await dio.get<List<dynamic>>('/todos');
-    return res.data!.cast<Map<String, dynamic>>();
+  @override
+  Future<void> updateTodo(Map<String, dynamic> todo) async {
+    await dio.patch('/todos/${todo['id']}', data: {
+      'title': todo['title'],
+      'completed': todo['completed'],
+    });
   }
 }

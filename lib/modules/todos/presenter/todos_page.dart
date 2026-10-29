@@ -39,9 +39,9 @@ class _TodosPageState extends State<TodosPage> {
           appBar: AppBar(
             toolbarHeight: 0,
             backgroundColor: const Color(0xFFF8F8FA),
-            actions: [
-              const SizedBox.shrink(),
-            ],
+            // actions: [
+            //   const SizedBox.shrink(),
+            // ],
           ),
           body: SafeArea(child: _buildBody(context)),
         ),
@@ -151,7 +151,10 @@ class _TodosPageState extends State<TodosPage> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute<void>(
-                      builder: (_) => TodoUpdatePage(todo: todo),
+                      builder: (_) => TodoUpdatePage(
+                        todo: todo,
+                        controller: widget.controller,
+                      ),
                     ),
                   );
                 },

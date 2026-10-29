@@ -30,4 +30,21 @@ void main() {
     expect(controller.error, 'Falha simulada');
     expect(controller.todos, isEmpty);
   });
+
+  test('updateTodoItem atualiza a tarefa no repositório', () async {
+    final repository = FakeTodoRepository();
+    final controller = _controller(repository);
+    await controller.load();
+
+    final todo = controller.todos.first;
+    await controller
+        .updateTodoItem(todo.copyWith(title: 'Atualizado', done: true));
+
+    // Verifica se o repositório foi atualizado
+    final updatedTodos = await repository.getTodos();
+    expect(updatedTodos.first.title, 'Atualizado');
+    expect(updatedTodos.first.done, isTrue);
+    expect(controller.loading, isFalse);
+    expect(controller.error, isNull);
+  });
 }

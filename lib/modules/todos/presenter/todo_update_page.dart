@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:todo_gabarito/modules/todos/presenter/todos_controller.dart';
 
 import '../domain/entities/todo.dart';
 
 class TodoUpdatePage extends StatefulWidget {
-  const TodoUpdatePage({super.key, required this.todo});
+  const TodoUpdatePage({super.key, required this.todo, required this.controller});
 
   final Todo todo;
+  final TodosController controller;
 
   @override
   State<TodoUpdatePage> createState() => _TodoUpdatePageState();
@@ -125,15 +127,40 @@ class _TodoUpdatePageState extends State<TodoUpdatePage> {
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
               child: Column(
                 children: [
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: () {
-                        // TODO: implementar o update nas camadas e retornar o resultado.
-                      },
-                      icon: const Icon(Icons.check_rounded),
-                      label: const Text('Salvar alterações'),
-                    ),
+                  ListenableBuilder(
+                    listenable: widget.controller,
+                    builder: (context, _) {
+                      return SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: widget.controller.loading
+                              ? null
+                              : () async {
+                                  await widget.controller.updateTodoItem(
+                                    widget.todo.copyWith(
+                                      title: titleController.text,
+                                      done: done,
+                                    ),
+                                  );
+                                  await widget.controller.load();
+                                  if (context.mounted) {
+                                    Navigator.of(context).pop();
+                                  }
+                                },
+                          icon: const Icon(Icons.check_rounded),
+                          label: widget.controller.loading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Salvar alterações'),
+                        ),
+                      );
+                    },
                   ),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),

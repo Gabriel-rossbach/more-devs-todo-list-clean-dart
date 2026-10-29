@@ -18,4 +18,17 @@ class TodoRepositoryImpl implements TodoRepository {
       throw const TodoFailure('Não foi possível carregar as tarefas');
     }
   }
+
+  @override
+  Future<void> updateTodo(Todo todo) async {
+    try {
+      await datasource.updateTodo({
+        'id': todo.id,
+        'title': todo.title,
+        'completed': todo.done,
+      });
+    } catch (_) {
+      throw const TodoFailure('Não foi possível atualizar a tarefa');
+    }
+  }
 }
