@@ -19,22 +19,4 @@ class FakeTodoRepository implements TodoRepository {
     if (fail) throw const TodoFailure('Falha simulada');
     return List.of(_todos);
   }
-
-  @override
-  Future<void> toggleDone(Todo todo) async {
-    if (fail) throw const TodoFailure('Falha simulada');
-    final index = _todos.indexWhere((t) => t.id == todo.id);
-    if (index != -1) {
-      _todos[index] = todo.copyWith(done: !todo.done);
-    }
-  }
-
-  @override
-  Future<void> updateTodo(Todo todo) async {
-    if (fail) throw const TodoFailure('Falha simulada');
-    final index = _todos.indexWhere((t) => t.id == todo.id);
-    if (index != -1) {
-      _todos[index] = todo;
-    }
-  }
 }

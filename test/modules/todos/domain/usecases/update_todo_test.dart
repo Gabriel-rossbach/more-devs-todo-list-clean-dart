@@ -1,20 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todo_gabarito/modules/todos/domain/entities/todo.dart';
-import 'package:todo_gabarito/modules/todos/domain/usecases/update_todo.dart';
+import 'package:todo_gabarito/modules/todos/domain/usecases/update_todos_use_case.dart';
 
 import '../../../../helpers/fake_todo_repository.dart';
 
 void main() {
-  test('UpdateTodo chama updateTodo no repositório', () async {
+  test('UpdateTodoUseCase filtra concluídas quando hideDone é verdadeiro', () async {
     final repository = FakeTodoRepository();
-    final usecase = UpdateTodo(repository);
+    final usecase = UpdateTodoUseCase(repository);
 
-    final todo = Todo(id: 1, title: 'Novo título', done: true);
+    final result = await usecase(hideDone: true);
 
-    await usecase(todo);
-
-    final todos = await repository.getTodos();
-    expect(todos.first.title, 'Novo título');
-    expect(todos.first.done, isTrue);
+    expect(result.map((t) => t.id), [1]); // Apenas a não concluída (id: 1)
   });
 }

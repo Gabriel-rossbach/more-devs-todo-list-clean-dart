@@ -2,5 +2,4 @@
 /// A External só implementa.
 abstract interface class TodoDatasource {
   Future<List<Map<String, dynamic>>> fetchTodos();
-  Future<void> updateTodo(Map<String, dynamic> todo);
 }

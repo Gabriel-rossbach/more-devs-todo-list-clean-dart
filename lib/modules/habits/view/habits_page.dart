@@ -1,72 +1,66 @@
 import 'package:flutter/material.dart';
 
-/// Tela de hábitos. Por enquanto usa dados fixos ([_mockHabits]).
-///
-/// TODO(aluno): criar o `HabitsController` e:
-///   1. receber o controller pelo construtor, como em `TodosPage`;
-///   2. envolver o Scaffold em um `ListenableBuilder`;
-///   3. trocar [_mockHabits] pelos hábitos do controller;
-///   4. tratar `loading` e `error` (veja `TodosPage`);
-///   5. chamar o caso de uso de check-in em [_checkIn].
-class HabitsPage extends StatefulWidget {
-  const HabitsPage({super.key});
+import '../viewmodel/habits_view_model.dart';
 
-  @override
-  State<HabitsPage> createState() => _HabitsPageState();
-}
+class HabitsPage extends StatelessWidget {
+  const HabitsPage({super.key, required this.viewModel});
 
-/// Só para a tela funcionar sem as outras camadas. Apague quando tiver a
-/// entidade `Habit` — streak e "feito hoje" são regras do domínio.
-class _HabitMock {
-  _HabitMock(this.id, this.name, this.streak, this.doneToday);
+  final HabitsViewModel viewModel;
 
-  final int id;
-  final String name;
-  int streak;
-  bool doneToday;
-}
-
-class _HabitsPageState extends State<HabitsPage> {
-  final _mockHabits = [
-    _HabitMock(1, 'Beber 2L de água', 5, false),
-    _HabitMock(2, 'Ler 10 páginas', 3, true),
-    _HabitMock(3, 'Estudar Flutter', 2, false),
-    _HabitMock(4, 'Caminhar 20 minutos', 0, false),
-    _HabitMock(5, 'Meditar', 0, false),
-  ];
-
-  void _checkIn(_HabitMock habit) {
-    // TODO(aluno): chamar o controller (POST /habits/:id/checkins).
-    setState(() {
-      habit.doneToday = true;
-      habit.streak++;
-    });
+  Future<void> _checkIn(BuildContext context, HabitItem habit) async {
+    final saved = await viewModel.checkIn(habit.id);
+    if (!saved && context.mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(content: Text('Não foi possível registrar o hábito')),
+        );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF315CFF),
-          brightness: Brightness.light,
+    return ListenableBuilder(
+      listenable: viewModel,
+      builder: (context, _) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF315CFF),
+            brightness: Brightness.light,
+          ),
+          scaffoldBackgroundColor: const Color(0xFFF6F7FB),
         ),
-        scaffoldBackgroundColor: const Color(0xFFF6F7FB),
-      ),
-      child: Scaffold(
-        body: SafeArea(child: _buildBody(context)),
+        child: Scaffold(
+          body: SafeArea(child: _buildBody(context)),
+        ),
       ),
     );
   }
 
   Widget _buildBody(BuildContext context) {
-    final habits = _mockHabits;
-    final doneToday = habits.where((habit) => habit.doneToday).length;
-    final bestStreak = habits.fold<int>(
-      0,
-      (best, habit) => habit.streak > best ? habit.streak : best,
-    );
+    if (viewModel.loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    final error = viewModel.error;
+    if (error != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.cloud_off_rounded, size: 48),
+            const SizedBox(height: 16),
+            Text(error, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(
+              onPressed: viewModel.load,
+              child: const Text('Tentar de novo'),
+            ),
+          ],
+        ),
+      );
+    }
 
+    final habits = viewModel.items;
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
       children: [
@@ -78,7 +72,7 @@ class _HabitsPageState extends State<HabitsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _todayLabel(),
+                    viewModel.todayLabel,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontSize: 13,
@@ -99,17 +93,18 @@ class _HabitsPageState extends State<HabitsPage> {
             ),
             IconButton.filledTonal(
               tooltip: 'Atualizar hábitos',
-              // TODO(aluno): chamar controller.load.
-              onPressed: () {},
+              onPressed: viewModel.load,
               icon: const Icon(Icons.refresh_rounded),
             ),
           ],
         ),
         const SizedBox(height: 26),
         _SummaryCard(
-          total: habits.length,
-          doneToday: doneToday,
-          bestStreak: bestStreak,
+          total: viewModel.total,
+          doneToday: viewModel.doneToday,
+          progress: viewModel.progress,
+          bestStreakLabel: viewModel.bestStreakLabel,
+          remainingLabel: viewModel.remainingLabel,
         ),
         const SizedBox(height: 24),
         Text(
@@ -130,9 +125,10 @@ class _HabitsPageState extends State<HabitsPage> {
               padding: const EdgeInsets.only(bottom: 10),
               child: _HabitCard(
                 name: habit.name,
-                streak: habit.streak,
+                streakLabel: habit.streakLabel,
+                onFire: habit.onFire,
                 doneToday: habit.doneToday,
-                onCheckIn: () => _checkIn(habit),
+                onCheckIn: () => _checkIn(context, habit),
               ),
             ),
           ),
@@ -145,16 +141,19 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({
     required this.total,
     required this.doneToday,
-    required this.bestStreak,
+    required this.progress,
+    required this.bestStreakLabel,
+    required this.remainingLabel,
   });
 
   final int total;
   final int doneToday;
-  final int bestStreak;
+  final double progress;
+  final String bestStreakLabel;
+  final String remainingLabel;
 
   @override
   Widget build(BuildContext context) {
-    final progress = total == 0 ? 0.0 : doneToday / total;
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 19, 20, 18),
       decoration: BoxDecoration(
@@ -216,7 +215,7 @@ class _SummaryCard extends StatelessWidget {
                     vertical: 7,
                   ),
                   child: Text(
-                    '🔥 melhor: $bestStreak ${bestStreak == 1 ? 'dia' : 'dias'}',
+                    bestStreakLabel,
                     style: const TextStyle(
                       color: Color(0xFFD9480F),
                       fontSize: 12,
@@ -241,9 +240,7 @@ class _SummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            doneToday == total && total > 0
-                ? 'Tudo feito hoje · mandou bem!'
-                : 'Faltam ${total - doneToday} para fechar o dia',
+            remainingLabel,
             style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
           ),
         ],
@@ -255,20 +252,21 @@ class _SummaryCard extends StatelessWidget {
 class _HabitCard extends StatelessWidget {
   const _HabitCard({
     required this.name,
-    required this.streak,
+    required this.streakLabel,
+    required this.onFire,
     required this.doneToday,
     required this.onCheckIn,
   });
 
   final String name;
-  final int streak;
+  final String streakLabel;
+  final bool onFire;
   final bool doneToday;
   final VoidCallback onCheckIn;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final onFire = streak > 0;
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
@@ -303,9 +301,7 @@ class _HabitCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    onFire
-                        ? '$streak ${streak == 1 ? 'dia seguido' : 'dias seguidos'}'
-                        : 'Comece hoje',
+                    streakLabel,
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                   ),
                 ],
@@ -363,32 +359,4 @@ class _EmptyState extends StatelessWidget {
       ),
     );
   }
-}
-
-String _todayLabel() {
-  const weekdays = [
-    'Segunda',
-    'Terça',
-    'Quarta',
-    'Quinta',
-    'Sexta',
-    'Sábado',
-    'Domingo',
-  ];
-  const months = [
-    'janeiro',
-    'fevereiro',
-    'março',
-    'abril',
-    'maio',
-    'junho',
-    'julho',
-    'agosto',
-    'setembro',
-    'outubro',
-    'novembro',
-    'dezembro',
-  ];
-  final now = DateTime.now();
-  return '${weekdays[now.weekday - 1]}, ${now.day} de ${months[now.month - 1]}';
 }
